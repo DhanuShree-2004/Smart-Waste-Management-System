@@ -29,6 +29,7 @@ Features
 
 
 **Code Breakdown**
+
 1️⃣ **Setup and Initialization**
 - Initializes serial communication for debugging (`Serial.begin(9600)`).  
 - Defines sensor input/output pins (`pinMode()` and `Servo.attach()`).  
