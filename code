@@ -1,6 +1,6 @@
 code#include <Servo.h>
 
-// Pin definitions
+// Pin definitionS
 #define IR_PIN D0
 #define TRIG_PIN D2
 #define ECHO_PIN D1
