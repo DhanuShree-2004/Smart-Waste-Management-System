@@ -1,0 +1,106 @@
+code#include <Servo.h>
+
+// Pin definitions
+#define IR_PIN D0
+#define TRIG_PIN D2
+#define ECHO_PIN D1
+#define SERVO_PIN D4
+
+Servo myServo;
+
+long duration;
+int distance;
+int dustbinLevel;
+const int maxDistance = 15;  // Distance at 100% (0 cm = full, 20 cm = empty)
+
+// Calibration: 0-20 cm corresponds to 0-100%
+int mapDistanceToLevel(int distance) {
+  if (distance >= maxDistance) {
+    return 0;  // If distance > maxDistance, the bin is empty (0% full)
+  } else {
+    return map(distance, 0, maxDistance, 100, 0);  // Map distance to dustbin level (0 to 100%)
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Initialize pins
+  pinMode(IR_PIN, INPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  
+  // Initialize servo
+  myServo.attach(SERVO_PIN);
+  myServo.write(0); // Start with servo closed (0 degrees)
+}
+
+void loop() {
+  // Measure distance using ultrasonic sensor
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  duration = pulseIn(ECHO_PIN, HIGH);
+  distance = duration * 0.0344 / 2; // Convert time into distance (cm)
+  
+  // Map the distance to the dustbin fill level (percentage)
+  dustbinLevel = mapDistanceToLevel(distance);
+
+//  Serial.print("Dustbin Level: ");
+//  Serial.print(dustbinLevel);
+//  Serial.println("%");
+  if(dustbinLevel>80){
+    gsm(dustbinLevel);
+    delay(1000);
+  }
+
+  // Check if IR sensor detects an object
+  if (digitalRead(IR_PIN) == LOW) {
+    // Move the servo to 90 degrees (open the lid)
+    myServo.write(90);
+//    Serial.println("IR detected: Servo Opened");
+    delay(5000);  // Keep the lid open for a second
+    myServo.write(0); // Close the lid after a delay
+    delay(1000);
+  }
+
+  int gas=analogRead(A0);
+//  Serial.print("Gas:");
+//  Serial.println(gas);
+  if(gas>1000){
+    gsm_gas();
+    delay(1000);
+  }
+
+  delay(500); // Small delay to avoid too much serial output
+}
+
+
+void gsm_gas()
+{   
+      Serial.println("AT+CMGF=1");    //To send SMS in Text Mode
+      delay(1000);
+      Serial.println("AT+CMGS=\"+916380384660\"\r"); //Change to destination phone number
+      delay(1000);
+      Serial.println("Alert.....Poisonous Gas Detected ");           
+      delay(100);
+      Serial.println((char)26);
+      delay(2000);  
+}
+
+void gsm(int a)
+{   
+      Serial.println("AT+CMGF=1");    //To send SMS in Text Mode
+      delay(1000);
+      Serial.println("AT+CMGS=\"+916380384660\"\r"); //Change to destination phone number
+      delay(1000);
+      Serial.println("Alert..Dustbin is going to Full & the Level is:"); 
+      delay(1000);
+      Serial.println(a);           
+      delay(100);
+      Serial.println((char)26);
+      delay(2000);  
+}
